@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d1b">
+<title>Rchat 3.0 — Accueil</title>
+<style>
+:root{--bg:#080d1b;--panel:#111d34;--line:#293b5b;--text:#eef4ff;--muted:#9aacc8;--blue:#4788ff;--cyan:#48d8ed}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#17345d,transparent 45%),var(--bg);color:var(--text);font-family:system-ui,Arial,sans-serif}
+header{height:70px;padding:0 max(5%,calc((100% - 1100px)/2));display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:#091326}
+.logo{font-size:27px;font-weight:950;letter-spacing:-1px;color:white;text-decoration:none}.logo span{color:var(--cyan)}
+nav{display:flex;gap:20px}nav a{color:var(--muted);text-decoration:none;font-size:14px}nav a:hover{color:white}
+main{max-width:1100px;margin:auto;padding:65px 22px}.hero{padding:55px 0 45px}.tag{color:var(--cyan);font-size:12px;font-weight:900;letter-spacing:2px}
+h1{font-size:clamp(42px,8vw,75px);line-height:1.02;letter-spacing:-3px;margin:16px 0}
+p{color:var(--muted);line-height:1.7;max-width:620px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.btn{display:inline-block;padding:13px 19px;border-radius:12px;background:var(--blue);color:white;text-decoration:none;font-weight:800}.btn.alt{background:#172640;border:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:35px}
+.card{display:block;padding:23px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#14233d,#0e182b);text-decoration:none;color:var(--text);transition:.2s}
+.card:hover{transform:translateY(-3px);border-color:#548eff}.emoji{font-size:30px}.card h2{font-size:19px;margin:14px 0 7px}.card p{font-size:13px;margin:0}
+footer{max-width:1100px;margin:auto;padding:0 22px 30px;color:#7184a4;font-size:12px}
+@media(max-width:600px){header{padding:0 15px}nav{gap:10px}nav a{font-size:12px}main{padding-top:35px}}
+</style>
+</head>
+<body>
+<header><a class="logo" href="index.html">R<span>chat</span></a><nav><a href="chat.html">Chat</a><a href="defis.html">Défis</a><a href="ia.html">IA</a></nav></header>
+<main>
+<section class="hero"><div class="tag">RCHAT 3.0 · COMMUNAUTÉ</div><h1>Bienvenue sur<br>Rchat.</h1><p>Un espace pour discuter, partager tes créations, participer aux défis de la communauté et découvrir l'assistant Rchat.</p><div class="actions"><a class="btn" href="chat.html">Entrer dans le chat →</a><a class="btn alt" href="defis.html">Découvrir les défis</a></div></section>
+<section class="grid">
+<a class="card" href="chat.html"><div class="emoji">💬</div><h2>Le chat</h2><p>Discute avec les membres, découvre les salons et personnalise ton profil.</p></a>
+<a class="card" href="defis.html"><div class="emoji">🏆</div><h2>Les défis</h2><p>Propose tes idées, participe aux concours et vote pour tes créations préférées.</p></a>
+<a class="card" href="ia.html"><div class="emoji">✦</div><h2>Rchat IA</h2><p>Un assistant conversationnel réservé aux membres Premium.</p></a>
+</section>
+</main><footer>Rchat 3.0 · Une communauté créative.</footer>
+</body></html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d1b"><title>Rchat 3.0 — Chat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080d1b;--panel:#111d34;--panel2:#172640;--line:#293b5b;--text:#edf4ff;--muted:#93a6c4;--blue:#4788ff;--cyan:#48d8ed;--green:#45d6a0;--red:#ff647c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Arial,sans-serif}
+button,input,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:10px 13px;background:var(--blue);color:white;font-weight:750}button:disabled{opacity:.5}
+header{height:62px;background:#0b1427;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.logo{font-size:24px;font-weight:950;text-decoration:none;color:white}.logo span{color:var(--cyan)}nav{display:flex;gap:16px}nav a{color:var(--muted);text-decoration:none;font-size:13px}
+#auth{max-width:420px;margin:55px auto;padding:25px;background:var(--panel);border:1px solid var(--line);border-radius:18px}
+#auth h1{margin-top:0}input,textarea{width:100%;padding:12px;margin:7px 0 13px;border-radius:10px;border:1px solid var(--line);background:#0a1427;color:white}
+label{font-size:12px;color:var(--muted)}.authrow{display:flex;gap:9px;flex-wrap:wrap}.muted{color:var(--muted);font-size:12px}
+#app{display:none;max-width:1250px;height:calc(100vh - 62px);min-height:540px;margin:auto;padding:15px;gap:14px}
+.sidebar{width:230px;flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:15px;overflow:auto}
+.mainchat{min-width:0;flex:1;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden}
+.side-title{font-size:11px;color:var(--muted);font-weight:900;letter-spacing:1px;margin:12px 0}
+.channel{display:block;width:100%;text-align:left;margin:4px 0;background:transparent;color:#bdcbe0}.channel.active{background:#20395f;color:white}
+#messages{flex:1;overflow:auto;padding:17px;display:flex;flex-direction:column;gap:12px}
+.msg{padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:#0c172b;max-width:850px}
+.msghead{display:flex;gap:9px;align-items:center;font-size:12px;margin-bottom:6px}.username{font-weight:850;color:#8eb5ff}.time{color:#7185a5}.content{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;font-size:14px}
+.msg.deleted .content{color:#7788a2;font-style:italic}.msgtools{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.tiny{padding:5px 8px;font-size:11px;background:#1c2d49}
+#composer{display:flex;gap:8px;padding:13px;border-top:1px solid var(--line)}#messageInput{margin:0;resize:none;min-height:45px;max-height:120px;flex:1}
+#members{font-size:12px;color:var(--muted);line-height:1.9}.status{color:var(--green)}
+#profilePanel{margin-top:15px;padding-top:12px;border-top:1px solid var(--line)}
+#toast{display:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1b2c49;border:1px solid var(--line);padding:12px 16px;border-radius:12px;z-index:10}
+@media(max-width:760px){#app{height:calc(100vh - 62px);padding:8px;gap:7px}.sidebar{width:112px;padding:8px}.sidebar .side-title{font-size:9px}.channel{font-size:11px;padding:8px 5px}.mainchat{border-radius:12px}#messages{padding:9px}.msg{padding:10px}header{padding:0 12px}nav{gap:9px}nav a{font-size:11px}}
+</style></head>
+<body>
+<header><a class="logo" href="index.html">R<span>chat</span></a><nav><a href="index.html">Accueil</a><a href="defis.html">Défis</a><a href="ia.html">IA</a></nav></header>
+<section id="auth">
+<h1>Bienvenue sur Rchat</h1><p class="muted">Connecte-toi ou crée ton compte.</p>
+<label>Pseudo (à remplir uniquement pour l'inscription)</label><input id="username" maxlength="24" placeholder="Ton pseudo">
+<label>Adresse e-mail</label><input id="email" type="email" autocomplete="email" placeholder="nom@exemple.fr">
+<label>Mot de passe</label><input id="password" type="password" autocomplete="current-password" placeholder="Mot de passe">
+<div class="authrow"><button id="login">Connexion</button><button id="signup">Créer un compte</button></div>
+<p><button id="reset" class="tiny">Mot de passe oublié</button></p><p id="authError" class="muted"></p>
+</section>
+<div id="app">
+<aside class="sidebar">
+<div class="side-title">SALONS</div><div id="channels"></div>
+<div class="side-title">MEMBRES</div><div id="members"></div>
+<div id="profilePanel"><div class="side-title">MON PROFIL</div><input id="bio" maxlength="180" placeholder="Ta bio"><button id="saveProfile">Enregistrer</button><button id="logout" class="tiny" style="margin-top:8px">Déconnexion</button></div>
+</aside>
+<section class="mainchat">
+<div style="padding:14px 17px;border-bottom:1px solid var(--line)"><strong id="channelTitle"># général</strong><div class="muted" id="channelDescription"></div></div>
+<div id="messages"></div>
+<form id="composer"><textarea id="messageInput" maxlength="3000" placeholder="Écris un message…"></textarea><button>Envoyer</button></form>
+</section>
+</div><div id="toast"></div>
+<script>
+const SUPABASE_URL="https://iqqllfcwdisomsyypeuu.supabase.co";
+const SUPABASE_KEY="sb_publishable_XE9etqdqqg7BmLronBNgTw_1tkHblfk";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let user=null,profile=null,channel=null,channels=[],subscription=null,profiles={};
+function toast(t){$("toast").textContent=t;$("toast").style.display="block";clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").style.display="none",3000)}
+function esc(s){return String(s??"")}
+async function authAction(mode){
+ $("authError").textContent="";
+ const email=$("email").value.trim(),password=$("password").value,username=$("username").value.trim();
+ if(!email||!password){$("authError").textContent="Renseigne ton e-mail et ton mot de passe.";return}
+ let result;
+ if(mode==="signup"){
+  if(username.length<3){$("authError").textContent="Le pseudo doit contenir au moins 3 caractères.";return}
+  result=await db.auth.signUp({email,password,options:{data:{username}}});
+ }else result=await db.auth.signInWithPassword({email,password});
+ if(result.error){$("authError").textContent=result.error.message;return}
+ if(mode==="signup"&&!result.data.session){$("authError").textContent="Compte créé. Vérifie ton e-mail pour confirmer l'inscription.";return}
+ if(result.data.session)start(result.data.session.user);
+}
+$("login").onclick=()=>authAction("login");$("signup").onclick=()=>authAction("signup");
+$("reset").onclick=async()=>{const email=$("email").value.trim();if(!email)return toast("Entre d'abord ton adresse e-mail.");const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});toast(error?error.message:"E-mail de réinitialisation envoyé si le compte existe.")};
+$("logout").onclick=()=>db.auth.signOut();
+async function start(u){
+ user=u;$("auth").style.display="none";$("app").style.display="flex";
+ await loadProfile();await loadChannels();await loadMembers();
+ db.channel("rchat3-chat-live").on("postgres_changes",{event:"*",schema:"public",table:"rchat3_messages",filter:channel?"channel_id=eq."+channel.id:undefined},loadMessages).subscribe();
+}
+async function loadProfile(){
+ const {data,error}=await db.from("rchat3_profiles").select("*").eq("id",user.id).maybeSingle();
+ if(error){toast("Profil : "+error.message);return}
+ profile=data;$("bio").value=data?.bio||"";
+}
+$("saveProfile").onclick=async()=>{const {error}=await db.from("rchat3_profiles").update({bio:$("bio").value.trim(),updated_at:new Date().toISOString()}).eq("id",user.id);toast(error?error.message:"Profil enregistré.")};
+async function loadChannels(){
+ const {data,error}=await db.from("rchat3_channels").select("*").order("created_at");
+ if(error){toast("Salons : "+error.message);return}
+ channels=data||[];const box=$("channels");box.replaceChildren();
+ channels.forEach(c=>{const b=document.createElement("button");b.className="channel"+(channel?.id===c.id?" active":"");b.textContent="# "+c.name;b.onclick=()=>selectChannel(c);box.append(b)});
+ if(!channel&&channels.length)selectChannel(channels[0]);
+}
+async function selectChannel(c){channel=c;$("channelTitle").textContent="# "+c.name;$("channelDescription").textContent=c.description||"";document.querySelectorAll(".channel").forEach((b,i)=>b.classList.toggle("active",channels[i]?.id===c.id));await loadMessages()}
+async function loadMembers(){
+ const {data,error}=await db.from("rchat3_profiles").select("id,username").order("username").limit(80);
+ if(error)return;
+ profiles={};(data||[]).forEach(p=>profiles[p.id]=p.username);
+ $("members").replaceChildren();
+ (data||[]).forEach(p=>{const d=document.createElement("div");d.textContent=(p.id===user.id?"● ":"• ")+(p.username||"Membre");if(p.id===user.id)d.className="status";$("members").append(d)});
+}
+function safeText(tag,text,cls){const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e}
+async function loadMessages(){
+ if(!channel)return;
+ const {data,error}=await db.from("rchat3_messages").select("*").eq("channel_id",channel.id).order("created_at",{ascending:true}).limit(100);
+ if(error){toast("Messages : "+error.message);return}
+ const box=$("messages");box.replaceChildren();
+ (data||[]).forEach(m=>{
+  const item=safeText("article","","msg"+(m.deleted_at?" deleted":""));
+  const head=safeText("div","","msghead");head.append(safeText("span",profiles[m.author_id]||"Membre","username"));head.append(safeText("span",new Date(m.created_at).toLocaleString("fr-FR"),"time"));item.append(head);
+  item.append(safeText("div",m.deleted_at?"Message supprimé":m.content,"content"));
+  if(!m.deleted_at&&m.author_id===user.id){
+   const tools=safeText("div","","msgtools");
+   const edit=safeText("button","Modifier","tiny");edit.onclick=()=>editMessage(m);tools.append(edit);
+   const del=safeText("button","Supprimer","tiny");del.onclick=()=>deleteMessage(m);tools.append(del);item.append(tools);
+  }
+  box.append(item);
+ });
+ box.scrollTop=box.scrollHeight;
+}
+async function editMessage(m){const value=prompt("Modifier ton message :",m.content);if(value===null||!value.trim())return;const {error}=await db.from("rchat3_messages").update({content:value.trim(),edited_at:new Date().toISOString()}).eq("id",m.id).eq("author_id",user.id);toast(error?error.message:"Message modifié.");if(!error)loadMessages()}
+async function deleteMessage(m){if(!confirm("Supprimer ce message ?"))return;const {error}=await db.from("rchat3_messages").update({deleted_at:new Date().toISOString()}).eq("id",m.id).eq("author_id",user.id);toast(error?error.message:"Message supprimé.");if(!error)loadMessages()}
+$("composer").onsubmit=async e=>{e.preventDefault();const content=$("messageInput").value.trim();if(!content||!channel)return;const {error}=await db.from("rchat3_messages").insert({channel_id:channel.id,author_id:user.id,content});if(error){toast(error.message);return}$("messageInput").value=""};
+db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){user=null;$("app").style.display="none";$("auth").style.display="block"}});
+db.auth.getSession().then(({data})=>{if(data.session)start(data.session.user)});
+</script></body></html>

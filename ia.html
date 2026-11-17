@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d1b"><title>Rchat — IA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080d1b;--panel:#111d34;--line:#293b5b;--text:#edf4ff;--muted:#93a6c4;--blue:#4788ff;--cyan:#48d8ed}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 70% 0%,#17345d,transparent 45%),var(--bg);color:var(--text);font-family:system-ui,Arial,sans-serif}
+header{height:65px;background:#0b1427;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 6%}
+a{color:inherit;text-decoration:none}.logo{font-size:25px;font-weight:950}.logo span{color:var(--cyan)}nav{display:flex;gap:18px;color:var(--muted);font-size:13px}
+main{max-width:850px;margin:35px auto;padding:0 16px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:19px;overflow:hidden}
+.head{padding:23px;border-bottom:1px solid var(--line)}.eyebrow{font-size:11px;color:var(--cyan);font-weight:900;letter-spacing:1.8px}.head h1{margin:8px 0;font-size:28px}.head p{color:var(--muted);font-size:13px;line-height:1.6}
+#gate{padding:35px;text-align:center;color:var(--muted)}#conversation{height:55vh;min-height:300px;max-height:570px;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.bubble{max-width:85%;padding:13px 15px;border-radius:15px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;font-size:14px}.user{align-self:flex-end;background:#24477d}.assistant{align-self:flex-start;background:#0b172b;border:1px solid var(--line)}
+#form{display:flex;gap:9px;padding:14px;border-top:1px solid var(--line)}textarea{flex:1;resize:none;min-height:48px;max-height:130px;padding:12px;border-radius:11px;border:1px solid var(--line);background:#0a1427;color:white;font:inherit}
+button{border:0;border-radius:11px;background:var(--blue);color:white;font-weight:800;padding:11px 17px;cursor:pointer}button:disabled{opacity:.5}
+#clear{background:#1b2c49;margin:0 14px 14px;font-size:12px;padding:8px 12px}.note{padding:0 20px 16px;color:var(--muted);font-size:11px}
+</style></head>
+<body>
+<header><a href="index.html" class="logo">R<span>chat</span></a><nav><a href="index.html">Accueil</a><a href="chat.html">Chat</a><a href="defis.html">Défis</a></nav></header>
+<main><section class="panel">
+<div class="head"><div class="eyebrow">RCHAT INTELLIGENCE</div><h1>Rchat IA ✦</h1><p>Ton assistant conversationnel. L'accès est réservé aux membres Premium. La conversation reste temporaire dans cette page.</p></div>
+<div id="gate">Vérification de ton accès…</div>
+<div id="chat" style="display:none"><div id="conversation"><div class="bubble assistant">Salut ! Je suis Rchat. Comment puis-je t'aider ?</div></div>
+<form id="form"><textarea id="message" maxlength="4000" placeholder="Écris ton message…"></textarea><button id="send">Envoyer</button></form>
+<button id="clear">Effacer la conversation</button><div class="note">L'historique temporaire est effacé lorsque tu réinitialises cette page ou fermes la session.</div></div>
+</section></main>
+<script>
+const SUPABASE_URL="https://iqqllfcwdisomsyypeuu.supabase.co";
+const SUPABASE_KEY="sb_publishable_XE9etqdqqg7BmLronBNgTw_1tkHblfk";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);let session=null,history=[];
+function say(text,who){const e=document.createElement("div");e.className="bubble "+who;e.textContent=text;$("conversation").append(e);$("conversation").scrollTop=$("conversation").scrollHeight}
+async function init(){
+ const {data,error}=await db.auth.getSession();if(error){$("gate").textContent=error.message;return}
+ session=data.session;if(!session){$("gate").innerHTML='Connecte-toi d’abord sur <a href="chat.html" style="color:#48d8ed">Rchat</a>.';return}
+ const {data:premium,error:pError}=await db.from("rchat3_premium").select("status,expires_at").eq("user_id",session.user.id).eq("status","active").gt("expires_at",new Date().toISOString()).maybeSingle();
+ if(pError){$("gate").textContent="Impossible de vérifier Premium : "+pError.message;return}
+ if(!premium){$("gate").textContent="Cette fonctionnalité est réservée aux membres Premium.";return}
+ $("gate").style.display="none";$("chat").style.display="block";
+}
+$("form").onsubmit=async e=>{
+ e.preventDefault();const message=$("message").value.trim();if(!message||!session)return;
+ say(message,"user");$("message").value="";$("send").disabled=true;
+ const context=history.slice(-12);
+ try{
+  const response=await fetch(SUPABASE_URL+"/functions/v1/rchat3-cohere",{
+   method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},
+   body:JSON.stringify({message,history:context})
+  });
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Erreur du service IA");
+  if(typeof data.reply!=="string")throw new Error("Réponse IA invalide");
+  say(data.reply,"assistant");history.push({role:"user",content:message},{role:"assistant",content:data.reply});
+ }catch(err){say("Je n'ai pas pu répondre : "+err.message,"assistant")}
+ finally{$("send").disabled=false;$("message").focus()}
+};
+$("clear").onclick=()=>{history=[];$("conversation").replaceChildren();say("Conversation effacée. On repart de zéro !","assistant")};
+init();
+</script></body></html>
