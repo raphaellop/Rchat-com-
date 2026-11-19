@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#08112e">
+<title>Administration · Rchat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{color-scheme:dark;--bg:#071126;--panel:rgba(16,29,62,.76);--line:rgba(160,190,255,.16);--muted:#9aacca;--text:#f4f7ff;--blue:#70a8ff;--violet:#a78bfa;--gold:#f4cf78}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 0%,#263e78 0,transparent 40%),radial-gradient(ellipse at 90% 20%,#442d70 0,transparent 35%),linear-gradient(145deg,#050b1b,#0a1734 55%,#090d20);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+a{color:inherit}.wrap{width:min(1180px,calc(100% - 32px));margin:auto;padding:28px 0 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}.brand{display:flex;align-items:center;gap:12px;text-decoration:none}.mark{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:23px;font-weight:950;color:#fff;background:linear-gradient(135deg,#4e9cff,#9169ef);box-shadow:0 8px 30px #527df055}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:2px;margin-top:3px}.back{border:1px solid var(--line);background:#ffffff0a;padding:10px 15px;border-radius:12px;text-decoration:none;color:#dce7ff;font-size:13px}
+.hero{padding:30px;border:1px solid var(--line);border-radius:26px;background:linear-gradient(125deg,#152b55cc,#241b46b8);box-shadow:0 22px 70px #0005;position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:260px;height:260px;right:-80px;top:-130px;border-radius:50%;background:#8b7cff22;filter:blur(8px)}.eyebrow{font-size:10px;letter-spacing:2.4px;color:#b8c9ff;font-weight:800}.hero h1{font-size:clamp(30px,5vw,48px);margin:10px 0 8px;letter-spacing:-1.5px}.hero p{color:#bac9e5;max-width:650px;line-height:1.65;margin:0}.tag{display:inline-flex;align-items:center;gap:7px;margin-top:18px;padding:8px 12px;border-radius:99px;background:#f2ce7620;border:1px solid #f2ce7650;color:#ffdf91;font-size:11px;font-weight:800;letter-spacing:1px}
+#gate,.panel{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(18px);border-radius:22px;padding:22px;box-shadow:0 18px 50px #0003}#gate{margin-top:22px;text-align:center;padding:38px 24px}#gate h2{margin:8px 0}#gate p{color:var(--muted);line-height:1.6}.hidden{display:none!important}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0}.stat{border:1px solid var(--line);background:#ffffff08;border-radius:18px;padding:18px}.stat span{color:var(--muted);font-size:12px}.stat strong{display:block;font-size:30px;margin-top:8px;letter-spacing:-1px}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.panel h2{font-size:17px;margin:0 0 6px}.sub{font-size:12px;color:var(--muted);margin:0 0 18px;line-height:1.5}.field{display:flex;gap:9px;flex-wrap:wrap}.field select{flex:1;min-width:180px}.field select,.btn{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:#0b1732;color:var(--text);font:inherit;font-size:13px}.btn{cursor:pointer;background:linear-gradient(135deg,#397fe0,#7859d6);border:0;font-weight:800}.btn.secondary{background:#ffffff0d;border:1px solid var(--line)}.btn.danger{background:#a33d57}.btn:disabled{opacity:.5;cursor:not-allowed}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:12px 9px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:#9fb4d9;font-size:10px;letter-spacing:1px;text-transform:uppercase}td{color:#e5edff}.pill{display:inline-block;padding:5px 8px;border-radius:99px;background:#ffffff10;color:#b8c8e8;font-size:10px;font-weight:800}.pill.admin{background:#f2ce7620;color:#ffdf91}.empty{padding:18px;color:var(--muted);font-size:13px}.notice{margin-top:14px;padding:11px 13px;border-radius:12px;background:#ffffff09;color:#b9c9e8;font-size:12px;line-height:1.5;white-space:pre-wrap}#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#17284c;border:1px solid var(--line);padding:12px 16px;border-radius:12px;box-shadow:0 10px 35px #0007;display:none;max-width:90%;font-size:13px;z-index:5}
+@media(max-width:760px){.wrap{width:min(100% - 22px,1180px);padding-top:16px}.hero{padding:22px}.stats{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.top{align-items:flex-start}.back{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+<a class="brand" href="index.html"><span class="mark">R</span><span><strong>Rchat</strong><small>CENTRE DE CONTRÔLE</small></span></a>
+<a class="back" href="index.html">← Retour à l'accueil</a>
+</header>
+<section class="hero">
+<div class="eyebrow">ESPACE PRIVILÉGIÉ · RCHAT 3.0</div>
+<h1>Administration</h1>
+<p>Pilote l'espace Rchat depuis un centre de contrôle unique. Cette zone est exclusivement réservée aux comptes Administrateur.</p>
+<span class="tag">◆ ADMINISTRATEUR</span>
+</section>
+
+<section id="gate">
+<div style="font-size:34px">⛔</div>
+<h2>Vérification des accès</h2>
+<p id="gateText">Connexion et vérification de tes autorisations en cours…</p>
+<button id="loginBtn" class="btn hidden" type="button">Se connecter</button>
+<a id="homeBtn" class="back hidden" href="index.html">Retour à l'accueil</a>
+</section>
+
+<main id="dashboard" class="hidden">
+<div class="stats">
+<div class="stat"><span>MEMBRES INSCRITS</span><strong id="memberCount">—</strong></div>
+<div class="stat"><span>MESSAGES PUBLICS</span><strong id="messageCount">—</strong></div>
+<div class="stat"><span>ADMINISTRATEURS</span><strong id="adminCount">—</strong></div>
+</div>
+<div class="grid">
+<section class="panel">
+<h2>Comptes Rchat</h2>
+<p class="sub">Liste des profils connus de Rchat. Les comptes Normaux et Premium conservent leurs accès habituels.</p>
+<div class="table-wrap"><table><thead><tr><th>Pseudo</th><th>Identifiant</th><th>Statut</th></tr></thead><tbody id="membersBody"><tr><td colspan="3" class="empty">Chargement…</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<h2>Gestion des administrateurs</h2>
+<p class="sub">Attribue ou retire le statut Administrateur. Cette action est réservée aux administrateurs déjà autorisés.</p>
+<div class="field"><select id="memberSelect" aria-label="Choisir un membre"><option value="">Chargement des membres…</option></select><button id="grantBtn" class="btn" type="button">Nommer admin</button></div>
+<div class="notice">Important : ne retire pas ton propre accès si tu es le seul administrateur. Le premier administrateur doit être initialisé dans le SQL fourni.</div>
+<h2 style="margin-top:22px">Administrateurs actuels</h2>
+<div id="adminsList" class="empty">Chargement…</div>
+</section>
+</div>
+<div class="notice" style="margin-top:16px">Les droits sont contrôlés par des fonctions PostgreSQL et des politiques RLS. Masquer cette page dans le navigateur ne constitue pas une protection : Supabase reste l'autorité.</div>
+</main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+const SUPABASE_URL="https://iqqllfcwdisomsyypeuu.supabase.co";
+const SUPABASE_KEY="sb_publishable_XE9etqdqqg7BmLronBNgTw_1tkHblfk";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let currentUser=null, allMembers=[], admins=[];
+function toast(s){$("toast").textContent=s;$("toast").style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").style.display="none",4200)}
+function gate(message,showLogin=false){$("gate").classList.remove("hidden");$("dashboard").classList.add("hidden");$("gateText").textContent=message;$("loginBtn").classList.toggle("hidden",!showLogin);$("homeBtn").classList.toggle("hidden",showLogin)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+async function loadDashboard(){
+ const [membersRes,msgRes,staffRes]=await Promise.all([
+  db.from("rchat3_profiles").select("id,username").order("username").limit(500),
+  db.from("rchat3_messages").select("id",{count:"exact",head:true}),
+  db.from("rchat3_staff").select("user_id,role,created_at").eq("role","admin").order("created_at")
+ ]);
+ if(membersRes.error){toast("Lecture des membres : "+membersRes.error.message);return}
+ if(msgRes.error){toast("Statistiques messages : "+msgRes.error.message)}
+ if(staffRes.error){toast("Liste admin : "+staffRes.error.message);return}
+ allMembers=membersRes.data||[];admins=staffRes.data||[];
+ $("memberCount").textContent=membersRes.count??allMembers.length;
+ $("messageCount").textContent=msgRes.count??"—";
+ $("adminCount").textContent=admins.length;
+ const adminIds=new Set(admins.map(a=>a.user_id));
+ $("membersBody").innerHTML=allMembers.map(m=>`<tr><td>${esc(m.username||"Sans pseudo")}</td><td><span class="pill">${esc(m.id.slice(0,8))}…</span></td><td>${adminIds.has(m.id)?'<span class="pill admin">ADMINISTRATEUR</span>':'<span class="pill">MEMBRE</span>'}</td></tr>`).join("")||'<tr><td colspan="3" class="empty">Aucun profil trouvé.</td></tr>';
+ const choices=allMembers.filter(m=>!adminIds.has(m.id));
+ $("memberSelect").innerHTML='<option value="">Choisir un membre…</option>'+choices.map(m=>`<option value="${esc(m.id)}">${esc(m.username||"Sans pseudo")} · ${esc(m.id.slice(0,8))}</option>`).join("");
+ $("adminsList").innerHTML=admins.length?admins.map(a=>{const m=allMembers.find(x=>x.id===a.user_id);return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)"><span><strong>${esc(m?.username||"Compte admin")}</strong><br><small style="color:var(--muted)">${esc(a.user_id.slice(0,12))}…</small></span><button class="btn danger" data-remove="${esc(a.user_id)}" type="button">Retirer</button></div>`}).join(""):'Aucun administrateur enregistré.';
+ document.querySelectorAll("[data-remove]").forEach(b=>b.addEventListener("click",()=>changeAdmin(b.dataset.remove,false)));
+}
+async function changeAdmin(id,enabled){
+ const {error}=await db.rpc("rchat3_set_admin",{p_user_id:id,p_enabled:enabled});
+ if(error){toast("Action refusée : "+error.message);return}
+ toast(enabled?"Administrateur ajouté.":"Droits administrateur retirés.");
+ await loadDashboard();
+}
+$("grantBtn").addEventListener("click",async()=>{const id=$("memberSelect").value;if(!id){toast("Choisis d'abord un membre.");return}if(!confirm("Donner tous les droits d'administration à ce compte ?"))return;await changeAdmin(id,true)});
+$("loginBtn").addEventListener("click",async()=>{const email=prompt("Adresse e-mail du compte Rchat :");if(!email)return;const password=prompt("Mot de passe :");if(!password)return;const {error}=await db.auth.signInWithPassword({email,password});if(error)toast(error.message);else location.reload()});
+async function start(){
+ const {data:{session}}=await db.auth.getSession();
+ if(!session){gate("Tu dois être connecté à ton compte Rchat pour vérifier tes droits.",true);return}
+ currentUser=session.user;
+ const {data,error}=await db.rpc("rchat3_is_admin");
+ if(error){gate("Impossible de vérifier les autorisations. Exécute le fichier SQL fourni, puis réessaie.");toast(error.message);return}
+ if(data!==true){gate("ACCÈS INTERDIT — Cette section est réservée aux administrateurs de Rchat.");return}
+ $("gate").classList.add("hidden");$("dashboard").classList.remove("hidden");
+ await loadDashboard();
+}
+db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT")gate("Session terminée. Reconnecte-toi pour accéder à Rchat.",true)});
+start();
+</script>
+</body>
+</html>
